@@ -63,8 +63,9 @@ result <- a1 - a2
 
 #make sphere in R
 
-r <- runif(1000, min = 0, max = 2*pi)
-rho <- runif(1000, min = 0, max = 2*pi)
+number_points <- 10
+r <- runif(number_points, min = 0, max = 2*pi)
+rho <- runif(number_points, min = 0, max = 2*pi)
 
 x <- sin(rho)*cos(r)
 y <- sin(rho)*sin(r)
@@ -105,15 +106,31 @@ ggplot2::ggplot(data = prin_comp, aes(x = first, y = second)) + geom_point( colo
 n_neighbors <- 2
 
 # Fit the object.
-nn <- get.knn(data = data_nopo, n_neighbors)$nn.index
+nn <- get.knn(data = data_nopo, n_neighbors) 
 nn <- as.data.frame(nn)
 nn$id <- rownames(nn)
 nn_melt <- melt(nn, id.vars = c("id"))
+nn_melt <- melt(nn)
 nn_melt <- nn_melt[c("id", "value")]
-adj_mat <- get.adjacency(graph.edgelist(as.matrix(nn_melt), directed=FALSE))
+adj_mat <- as.data.frame(as.matrix(get.adjacency(graph.edgelist(as.matrix(nn_melt), directed=TRUE))))
+colnames(adj_mat)
 head(as.matrix(adj_mat))
-View(as.matrix(adj_mat))
+View((adj_mat))
+t <- sort(as.integer(colnames(adj_mat)))
+adj_mat <- adj_mat[order(colnames(adj_mat))]
+adj_mat <- sort()
 #adj_mat2 <- make.distmat(data_nopo)
+#
+#
+
+devtools::install_github(c("duncantl/XMLRPC", "duncantl/RWordPress"))
+library(RWordPress)
+library(knitr)
+
+
+# If need be, set your working directory to the location where you stored the Rmd file. 
+setwd("/Users/sebastianmartinez/Dropbox/0. UoG/Projects/spectraldimreduc")
+
 
 
 
@@ -126,8 +143,7 @@ colnames(spec) <- c("first", "second")
 
 ggplot2::ggplot(data = spec, aes(x = first, y = second)) + geom_point( color = s_colors)
 plot(se[,1], se[,2])
-length(se[,1])
-sphere_data_red = se.fit_transform(X=sphere_data)
+
 
 
 
