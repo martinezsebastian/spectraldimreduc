@@ -9,6 +9,7 @@
 <meta name="generator" content="pandoc" />
 
 
+<meta name="author" content="Sebasti??n Mart??nez" />
 
 
 <title>Dimensionality Reduction using Spectral Analysis</title>
@@ -121,17 +122,120 @@ $(document).ready(function () {
 
 
 <h1 class="title toc-ignore">Dimensionality Reduction using Spectral Analysis</h1>
+<h4 class="author"><em>Sebasti??n Mart??nez</em></h4>
 
 </div>
 
 
-<div id="r-markdown" class="section level2">
-<h2>R Markdown</h2>
+<div id="dimensionality-reduction-using-spectral-analysis" class="section level1">
+<h1>Dimensionality Reduction using Spectral Analysis</h1>
+<p>This short document presents an interesting alternative to Principal Component Analysis by using spectral decomposition. The original content of this document is based on a <a href="https://juanitorduz.github.io/laplacian_eigenmaps_dim_red.html">presentation</a> given by Dr. Juan Orduz at the 2018 PyData Berlin conference. The linked post is a practical application using Python to perform non-linear dimensionality reduction based on spectral techniques. This post aims at replicating the same results, but using R instead.</p>
+<p>This is a list of all the packages you are going to need to carry out this exercise in R.</p>
+<ul>
+<li><code>dimRed</code>: Carries out the main calculations of the spectral analysis</li>
+</ul>
 <p>This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <a href="http://rmarkdown.rstudio.com" class="uri">http://rmarkdown.rstudio.com</a>.</p>
-<pre><code>if(!require(dimRed)) install.packages(&quot;dimRed&quot;,repos = &quot;http://cran.us.r-project.org&quot;)
-library(&quot;dimRed&quot;)</code></pre>
-<p>Let’s see if this works fine</p>
-<pre><code>adj_mat &lt;- matrix</code></pre>
+<pre><code>adj_mat &lt;- matrix(c(0,1,1,1,1,0,0,0,1,0,0,0,1,0,0,0), nrow = 4, ncol = 4)
+deg_mat &lt;- Diagonal(rowsum(adj_mat,group = c(1,1,1,1)), n = 4)
+laplacian &lt;- as.matrix(deg_mat-adj_mat)
+
+#GARI(adj_mat, deg_mat)
+#
+y &lt;- spec.emb(adj_mat,1)
+
+lambda_1 &lt;- 1
+
+a1 &lt;- laplacian %*% y
+a2 &lt;- lambda_1*(deg_mat %*% y)
+result &lt;- a1 - a2
+
+
+
+#make sphere in R
+
+number_points &lt;- 10
+r &lt;- runif(number_points, min = 0, max = 2*pi)
+rho &lt;- runif(number_points, min = 0, max = 2*pi)
+
+x &lt;- sin(rho)*cos(r)
+y &lt;- sin(rho)*sin(r)
+z &lt;- cos(rho)
+data &lt;- as.data.frame(matrix(c(x, y, z), ncol =3))
+colnames(data) &lt;- c(&quot;x_ax&quot;,&quot;y_ax&quot;, &quot;z_ax&quot;)
+
+
+x &lt;- data$x_ax[!(abs(data$z_ax)&gt;0.95)]
+y &lt;- data$y_ax[!(abs(data$z_ax)&gt;0.95)]
+z &lt;- data$z_ax[!(abs(data$z_ax)&gt;0.95)]
+
+data_nopo &lt;- as.data.frame(matrix(c(x, y, z), ncol =3))
+colnames(data_nopo) &lt;- c(&quot;x_ax&quot;,&quot;y_ax&quot;, &quot;z_ax&quot;)
+x1 &lt;- rnorm(length(data_nopo$x_ax))
+
+s_colors &lt;- rgb(abs(data_nopo$x_ax), abs(data_nopo$y_ax), abs(data_nopo$z_ax), maxColorValue = 1)
+scatterplot3d(data_nopo, pch = 16, main=&quot;Sphere&quot;,
+              xlab = &quot;X&quot;,
+              ylab = &quot;Y&quot;,
+              zlab = &quot;Z&quot;,
+              box = FALSE,
+              color = s_colors)
+
+ggplot2::ggplot(data = data_nopo, aes(x = x_ax, y = y_ax)) + geom_point( color = s_colors)
+
+n_components &lt;- 2
+prin &lt;- prcomp(x = data_nopo, scale. = T, rank. = n_components)
+#prin$center
+#biplot(prin)
+prinx &lt;- prin$x[,1]
+priny &lt;- prin$x[,2]
+prin_comp &lt;- as.data.frame(matrix(c(prinx, priny), ncol = 2))
+colnames(prin_comp) &lt;- c(&quot;first&quot;, &quot;second&quot;)
+
+ggplot2::ggplot(data = prin_comp, aes(x = first, y = second)) + geom_point( color = s_colors)
+
+n_neighbors &lt;- 2
+
+# Fit the object.
+nn &lt;- get.knn(data = data_nopo, n_neighbors) 
+nn &lt;- as.data.frame(nn)
+nn$id &lt;- rownames(nn)
+nn_melt &lt;- melt(nn, id.vars = c(&quot;id&quot;))
+nn_melt &lt;- melt(nn)
+nn_melt &lt;- nn_melt[c(&quot;id&quot;, &quot;value&quot;)]
+adj_mat &lt;- as.data.frame(as.matrix(get.adjacency(graph.edgelist(as.matrix(nn_melt), directed=TRUE))))
+colnames(adj_mat)
+head(as.matrix(adj_mat))
+View((adj_mat))
+t &lt;- sort(as.integer(colnames(adj_mat)))
+adj_mat &lt;- adj_mat[order(colnames(adj_mat))]
+adj_mat &lt;- sort()
+#adj_mat2 &lt;- make.distmat(data_nopo)
+#
+#
+
+devtools::install_github(c(&quot;duncantl/XMLRPC&quot;, &quot;duncantl/RWordPress&quot;))
+library(RWordPress)
+library(knitr)
+
+
+# If need be, set your working directory to the location where you stored the Rmd file. 
+setwd(&quot;/Users/sebastianmartinez/Dropbox/0. UoG/Projects/spectraldimreduc&quot;)
+
+
+
+
+spec_emb &lt;- spec.emb(A = as.matrix(adj_mat), p = n_components)
+spec1 &lt;- spec_emb[,1]
+spec2 &lt;- spec_emb[,2]
+spec &lt;- as.data.frame(matrix(c(spec1, spec2), ncol = 2))
+colnames(spec) &lt;- c(&quot;first&quot;, &quot;second&quot;)
+
+
+ggplot2::ggplot(data = spec, aes(x = first, y = second)) + geom_point( color = s_colors)
+plot(se[,1], se[,2])
+</code></pre>
+<p>lpvs &lt;- matrix(rnorm(25), 5, 5) lpvs &lt;- apply(lpvs, 2, function(x) { return (abs(x)/sqrt(sum(x^2))) }) lpvs &lt;- apply(adj_mat, 2, function(x) { return (abs(x)/sqrt(sum(x^2))) }) RDP &lt;- sample_dot_product(adj_mat) RDP &lt;- graph_from_adjacency_matrix(adj_mat) embed &lt;- embed_adjacency_matrix(RDP, 1)</p>
+<p>dat &lt;- loadDataSet(“3D S Curve”) ## use the S4 Class directly: diffmap &lt;- DiffusionMaps() emb &lt;- <a href="mailto:diffmap@fun">diffmap@fun</a>(dat, <a href="mailto:diffmap@stdpars">diffmap@stdpars</a>) ## simpler, use embed(): emb2 &lt;- embed(dat, “DiffusionMaps”) plot(emb, type = “2vars”) samp &lt;- sample(floor(nrow(dat) / 10)) embsamp &lt;- <a href="mailto:diffmap@fun">diffmap@fun</a>(dat[samp], <a href="mailto:diffmap@stdpars">diffmap@stdpars</a>) embother &lt;- <a href="mailto:embsamp@apply">embsamp@apply</a>(dat[-samp]) plot(embsamp, type = “2vars”) points(embother)</p>
 </div>
 
 
